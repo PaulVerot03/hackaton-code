@@ -1,138 +1,106 @@
-# RNA Structure Processing and Prediction Tool
+# 🧬 RNA Nanostructure Designer
 
-This directory contains Python scripts for processing RNA structure data, predicting secondary structures, and saving the results.
+This repository contains a set of Python scripts designed to automate the process of designing custom RNA nanostructures based on desired secondary structure scaffolds. It combines sequence design using **ViennaRNA**, 3D structure prediction using **RNAComposer** (via a Selenium web driver interface), and analysis/visualization using **Biopython** and **Matplotlib**.
 
-## `process_rna_data.py`
+## 🔬 Project Overview
 
-This script demonstrates how to:
-1. Parse both `.cif` and `.pdb` files containing RNA 3D structure data using Biopython.
-2. Extract the RNA sequence from the parsed structure.
-3. Predict the RNA secondary structure (in dot-bracket notation) and its Minimum Free Energy (MFE) using the ViennaRNA package.
-4. Generate arc plot visualizations of the secondary structure using matplotlib.
-5. Save the extracted sequence, predicted secondary structure with MFE, and visualization to files.
+The pipeline aims to generate stable RNA sequences that fold into specific target secondary structures (scaffolds) decorated with stabilizing motifs (GNRA, UUCG tetraloops, and Kissing Loops).
 
-### Setup
+### Key Components
 
-To run this script, you need to set up a Python virtual environment and install the required libraries.
+1.  **`create_rna_data.py`**: Handles the sequence design and 3D structure prediction.
+      * Defines several target RNA scaffolds (dot-bracket notation).
+      * Implements motif-aware sequence design using ViennaRNA's inverse folding function (`RNA.inverse_fold`).
+      * Submits the designed sequence and secondary structure to the **RNAComposer** web server via Selenium to obtain a 3D PDB structure.
+2.  **`process_rna_data.py`**: Performs analysis and visualization of the resulting structures.
+      * Parses PDB or MMCIF files using **Biopython**.
+      * Predicts the Minimum Free Energy (MFE) secondary structure for the sequence using `RNA.fold`.
+      * Generates arc plots of the secondary structure using **Matplotlib**.
+3.  **`rna_visualizer.py`**: Displays the final 3D PDB structure in an interactive **Mol\*Star** viewer using a Selenium web driver.
+4.  **`demo.py`**: The main execution script that orchestrates the entire pipeline, from scaffold selection to final 3D visualization of the most stable candidate.
 
-`setup.sh` will create the venv and install required libraries. On linux, `chmod +x setup.sh && ./setup.sh`
-
-### Usage
-
-The script can be run in several ways:
-
-**Default behavior (uses example files):**
-```bash
-.venv/bin/python3 process_rna_data.py
-```
-
-**With specific input file:**
-```bash
-.venv/bin/python3 process_rna_data.py your_structure.pdb
-.venv/bin/python3 process_rna_data.py your_structure.cif
-```
-
-**With custom output directory:**
-```bash
-.venv/bin/python3 process_rna_data.py your_structure.pdb my_results
-```
-
-### Output
-
-The script will create an `output` directory (if it doesn't exist) or use the specified output directory. For each processed RNA chain, it will generate three files:
-
-*   `[structure_id]_[chain_id]_sequence.txt`: Contains the extracted RNA sequence.
-*   `[structure_id]_[chain_id]_secondary_structure.txt`: Contains the predicted secondary structure in dot-bracket notation and its Minimum Free Energy (MFE).
-*   `[structure_id]_[chain_id]_structure_arc_plot.png`: Visualization of the secondary structure as an arc diagram.
-
-## `create_rna_data.py`
-
-This script generates 3D RNA structure models from sequences and secondary structures using external tools. It demonstrates how to:
-
-1. Generate RNA scaffold candidates using the `generate_rna` module
-2. Create input files for FARFAR2 (FASTA and secondary structure files)
-3. Run FARFAR2 to generate 3D PDB models from sequence and secondary structure constraints
-4. Convert PDB files to CIF format using external conversion tools
+## 🛠️ Setup and Installation
 
 ### Prerequisites
 
-This script requires external tools to be installed:
-- **Rosetta/FARFAR2**: For 3D structure prediction
-- **pdb2cif** (or equivalent): For PDB to CIF conversion
+You need to have Python installed. The scripts rely on external libraries and tools:
 
-### Usage
+  * **ViennaRNA Package**: Used for folding and inverse folding.
+  * **Biopython**: Used for parsing PDB/CIF files.
+  * **Selenium**: Used to automate web interactions with RNAComposer and Mol\*Star.
+  * **Matplotlib**: Used for 2D arc plot visualization.
+  * **Web Browser**: Chrome is used by the scripts. You need to have the appropriate **WebDriver** installed and accessible in your system's PATH.
+
+### 1\. Install Python Dependencies
+
+It is highly recommended to use a virtual environment.
 
 ```bash
-.venv/bin/python3 create_rna_data.py
+# Create a virtual environment
+python3 -m venv .venv
+
+# Activate the environment
+source .venv/bin/activate  # On Linux/macOS
+# .venv\Scripts\activate.bat  # On Windows
+
+# Install the required libraries
+pip install -r requirements.txt
 ```
 
-The script will:
-1. Generate 5 candidates for the "z_tile_tetramer" scaffold
-2. Save candidates using the `generate_rna` module
-3. Use the best candidate to create FARFAR2 input files
-4. Run FARFAR2 to generate 3 PDB structure models
-5. Convert the first PDB to CIF format
+### 2\. Set up ChromeDriver
 
-### Output
+Download the correct version of **[ChromeDriver](https://googlechromelabs.github.io/chrome-for-testing/)** that matches your installed Chrome browser. You must place the `chromedriver` executable in a directory that is included in your system's **PATH** environment variable.
 
-The script creates several directories and files:
-- `farfar_inputs/`: Contains FASTA and secondary structure files for FARFAR2
-- `farfar_outputs/`: Contains generated PDB files from FARFAR2
-- Generated CIF files converted from PDB models
+## 🚀 Usage
 
-### Functions
+The primary entry point for the entire pipeline is `demo.py`.
 
-- `write_farfar2_inputs()`: Creates FASTA and secondary structure files for FARFAR2
-- `run_farfar2()`: Executes FARFAR2 to generate 3D models
-- `convert_pdb_to_cif()`: Converts PDB files to CIF format
-- `write_rnacomposer_input()`: Writes input for RNAComposer (alternative tool)
+### Running the Demo
 
-## Pipeline Flow
+1.  Make sure your virtual environment is activated (`source .venv/bin/activate`).
+2.  Run the main script:
 
-generate_rna.py → 2. create_rna_data.py → 3. process_rna_data.py
+<!-- end list -->
 
-- Step 1: RNA Design (generate_rna.py)
-  - Generates RNA scaffold candidates with sequences and secondary structures
-  - Creates multiple candidate designs for a given scaffold
-  - Outputs: RNA sequences + predicted/target secondary structures
+```bash
+python demo.py
+```
 
-- Step 2: 3D Structure Generation (create_rna_data.py)
-  - Takes the best candidate from generate_rna.py
-  - Calls gr.generate_candidates_for_scaffold() and gr.save_candidates()
-  - Converts sequence + secondary structure → 3D PDB models via FARFAR2
-  - Converts PDB → CIF format
-  - Outputs: 3D structure files (.pdb, .cif)
+### Script Workflow (`demo.py`)
 
-- Step 3: Analysis & Visualization (process_rna_data.py)
-  - Takes the generated .pdb/.cif files from Step 2
-  - Parses 3D structures to extract sequences
-  - Predicts secondary structures using ViennaRNA
-  - Generates arc plot visualizations
-  - Outputs: Sequence files, secondary structure predictions, visualizations
+1.  **Scaffold Selection**: A GUI prompt (via `easygui`) will ask you to select a target secondary structure scaffold (e.g., `z_tile_tetramer`, `tetrahedron_wireframe`, etc.).
+2.  **Candidate Generation**: The script will prompt for the number of candidates to generate.
+3.  **Inverse Folding**: `create_rna_data.py` designs multiple sequences that fit the target scaffold and the stabilizing motifs (GNRA, UUCG, Kissing Loops).
+4.  **3D Modeling (RNAComposer)**: Each designed sequence and predicted structure is submitted to the **RNAComposer** web server. This step is time-consuming (due to a required 35-second waiting period per candidate) and requires a live internet connection. The resulting PDB files are saved in the `pdb_files/` directory.
+5.  **Analysis**: `process_rna_data.py` reads the generated PDB files, calculates their actual MFE and secondary structure, and saves the data.
+6.  **Selection**: The candidate with the lowest (most negative) MFE is identified as the most stable design.
+7.  **Visualization**: The most stable structure is opened in a **Mol\*Star** web viewer for interactive 3D inspection.
 
-Data Flow:
+### Output Files
 
-RNA Scaffold Concept
-    ↓ (generate_rna.py)
-Sequence + Secondary Structure Candidates
-    ↓ (create_rna_data.py)
-3D Structure Models (.pdb/.cif)
-    ↓ (process_rna_data.py)
-Analysis Results + Visualizations
+The script generates the following directories:
 
+  * `designed_sequences/`: Contains text files with sequence, target/predicted structure, MFE, and motif details for each generated candidate.
+  * `pdb_files/`: Contains the 3D structure files (PDB format) generated by RNAComposer.
+  * `MFE_test/`: Contains subdirectories for each candidate, holding their sequence, predicted secondary structure, MFE analysis, and a 2D arc plot visualization.
+  * `analysis/`: Temporary files used for MFE comparison.
 
+## 📜 Code Structure & Details
 
-## References
+### `create_rna_data.py`
 
-This script utilizes several open-source libraries and a public dataset. Please refer to their documentation and publications for more details.
+  * `scaffold`: Dictionary defining pre-configured dot-bracket scaffolds.
+  * `find_hairpin_loops(dot_bracket)`: Identifies regions in the scaffold for motif insertion.
+  * `sample_motif_configuration(...)`: Chooses whether a loop receives a stabilizing tetraloop (GNRA/UUCG) or is paired as a Kissing Loop.
+  * `motifs_to_constraints(...)`: Converts the chosen motifs into base-level constraints (e.g., 'G' allowed at position $i_0$, 'A' allowed at position $i_0+3$ for a GNRA loop).
+  * `inverse_fold_with_constraints(...)`: Performs the core sequence design using ViennaRNA's `RNA.inverse_fold` with custom base constraints.
+  * `create_pdb_from_RNAComposer(...)`: Uses Selenium to interface with the RNAComposer server. **Note:** The fixed `time.sleep(35)` is a necessary, albeit crude, way to wait for the web server to process the job.
 
-### Biopython
+### `process_rna_data.py`
 
-*   **Documentation:** [Biopython Tutorial and Cookbook](http://biopython.org/DIST/docs/tutorial/Tutorial.html)
-*   **Publication:** Cock, P. J. A., et al. (2009). Biopython: freely available Python tools for computational molecular biology and bioinformatics. *Bioinformatics*, 25(11), 1422-1423.
+  * `plot_arc_diagram(...)`: Generates a 2D arc plot visualization of the secondary structure.
+  * `process_structure_file(...)`: A unified function to parse PDB or MMCIF files, extract the sequence, predict its MFE secondary structure using `RNA.fold`, and save the analysis/visualization.
 
-### ViennaRNA
+### `rna_visualizer.py`
 
-*   **Documentation:** [ViennaRNA Python API](https://pypi.org/project/ViennaRNA/)
-*   **Publication:** Lorenz, R., et al. (2011). ViennaRNA Package 2.0. *Algorithms for Molecular Biology*, 6(1), 26.
-
+  * `represent(path_to_file)`: Uses Selenium to upload and display a local PDB file into the online Mol\*Star viewer for interactive 3D visualization.
